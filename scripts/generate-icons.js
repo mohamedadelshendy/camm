@@ -1,8 +1,9 @@
 const fs = require("fs");
 const path = require("path");
 const zlib = require("zlib");
+const { execSync } = require("child_process");
 
-function makePNG(width, height, r, g, b) {
+function makePNG(width, height) {
   const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
 
   const table = new Int32Array(256);
@@ -36,24 +37,51 @@ function makePNG(width, height, r, g, b) {
   ihdr.writeUInt32BE(width, 0);
   ihdr.writeUInt32BE(height, 4);
   ihdr[8] = 8;
-  ihdr[9] = 2; // RGB
+  ihdr[9] = 6; // RGBA
   ihdr[10] = 0;
   ihdr[11] = 0;
   ihdr[12] = 0;
 
   const rawRows = [];
+  const cx = width / 2;
+  const cy = height / 2;
+  const r = width * 0.45;
+
   for (let y = 0; y < height; y++) {
-    const row = Buffer.alloc(1 + width * 3);
-    row[0] = 0;
+    const row = Buffer.alloc(1 + width * 4);
+    row[0] = 0; // Filter: None
     for (let x = 0; x < width; x++) {
-      row[1 + x * 3] = r;
-      row[1 + x * 3 + 1] = g;
-      row[1 + x * 3 + 2] = b;
+      const idx = 1 + x * 4;
+      const dx = x - cx;
+      const dy = y - cy;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      if (dist <= r) {
+        if (dist < r * 0.4) {
+          // Camera lens center: Dark slate
+          row[idx] = 15;
+          row[idx + 1] = 23;
+          row[idx + 2] = 42;
+          row[idx + 3] = 255;
+        } else {
+          // Camera body: Cyan glow
+          row[idx] = 6;
+          row[idx + 1] = 182;
+          row[idx + 2] = 212;
+          row[idx + 3] = 255;
+        }
+      } else {
+        // Transparent
+        row[idx] = 0;
+        row[idx + 1] = 0;
+        row[idx + 2] = 0;
+        row[idx + 3] = 0;
+      }
     }
     rawRows.push(row);
   }
-  const idatData = zlib.deflateSync(Buffer.concat(rawRows));
 
+  const idatData = zlib.deflateSync(Buffer.concat(rawRows));
   return Buffer.concat([
     signature,
     chunk("IHDR", ihdr),
@@ -62,14 +90,22 @@ function makePNG(width, height, r, g, b) {
   ]);
 }
 
-const iconsDir = path.join(__dirname, "..", "desktop-windows", "src-tauri", "icons");
-fs.mkdirSync(iconsDir, { recursive: true });
+const desktopDir = path.join(__dirname, "..", "desktop-windows");
+const sourceIconPath = path.join(desktopDir, "app-icon.png");
 
-const png32 = makePNG(32, 32, 6, 182, 212);
-const png128 = makePNG(128, 128, 6, 182, 212);
-fs.writeFileSync(path.join(iconsDir, "32x32.png"), png32);
-fs.writeFileSync(path.join(iconsDir, "128x128.png"), png128);
-fs.writeFileSync(path.join(iconsDir, "128x128@2x.png"), png128);
-fs.writeFileSync(path.join(iconsDir, "icon.png"), png128);
-fs.writeFileSync(path.join(iconsDir, "icon.ico"), png32); // Windows loader accepts PNG-in-ICO or basic ICO
-console.log("Generated icons in: " + iconsDir);
+// 1. Generate high-resolution 512x512 source icon
+const iconPng = makePNG(512, 512);
+fs.writeFileSync(sourceIconPath, iconPng);
+console.log("Created source icon at: " + sourceIconPath);
+
+// 2. Run Tauri's built-in icon generator to produce all canonical icons
+try {
+  console.log("Running Tauri icon generator...");
+  execSync("npx tauri icon app-icon.png", {
+    cwd: desktopDir,
+    stdio: "inherit"
+  });
+  console.log("Successfully generated all platform icons via Tauri icon generator!");
+} catch (err) {
+  console.error("Tauri icon generator error:", err.message);
+}
