@@ -1,0 +1,40 @@
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Node / Tauri
+node_modules/
+dist/
+dist-ssr/
+*.local
+desktop-windows/src-tauri/target/
+desktop-windows/node_modules/
+desktop-windows/dist/
+
+# Rust
+target/
+**/*.rs.bk
+Cargo.lock
+
+# Gradle / Android
+.gradle/
+build/
+mobile-android/.gradle/
+mobile-android/build/
+mobile-android/app/build/
+local.properties
+*.apk
+*.aab
+.idea/
+*.iml
+.cxx/
+captures/
+.externalNativeBuild/
+
+# IDE & Editor
+.vscode/
+*.swp
+*.bak
+*~

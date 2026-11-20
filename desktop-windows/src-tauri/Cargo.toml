@@ -1,0 +1,37 @@
+[package]
+name = "camm-desktop"
+version = "1.0.0"
+description = "Ultra-Low-Latency Mobile-to-PC Virtual Webcam"
+authors = ["CAMM"]
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2.2", features = [] }
+
+[dependencies]
+tauri = { version = "2.2", features = [] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1.40", features = ["full"] }
+byteorder = "1.5"
+parking_lot = "0.12"
+crossbeam-channel = "0.5"
+log = "0.4"
+env_logger = "0.11"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
+windows = { version = "0.58", features = [
+    "Win32_Foundation",
+    "Win32_System_Memory",
+    "Win32_System_Threading",
+    "Win32_Security",
+] }
+
+[features]
+default = []
+ffmpeg = ["dep:ffmpeg-next"]
+
+[dependencies.ffmpeg-next]
+version = "7.0"
+optional = true
+default-features = false
+features = ["codec", "format", "software-scaling"]

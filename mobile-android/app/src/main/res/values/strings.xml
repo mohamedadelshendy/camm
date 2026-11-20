@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">CAMM</string>
+    <string name="camera_service_channel_name">CAMM Streaming Service</string>
+    <string name="camera_service_channel_desc">Active low-latency camera streaming session</string>
+    <string name="camera_service_title">CAMM Virtual Webcam Active</string>
+    <string name="camera_service_text">Streaming video at ultra-low latency</string>
+</resources>
